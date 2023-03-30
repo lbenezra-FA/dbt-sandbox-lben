@@ -1,32 +1,18 @@
-{#{% materialization split_permutate_union_table, adapter='bigquery' %}
 
 {# the goal here is to create a materialization that takes a big-ass table,
     breaks it apart using a nested for-loop by permutation values,
     creates a temp table for each of those values that can build simultaneously,
     and then unions all the temp tables. 
-#}
-{# 
+
     champions_score_household_attribute_presence_reduced ---> household_attribute_presence_chunks --|
                                                                                                     |--> 
     champions_score_profile_mapping ------------------------> profile_mapping_chunks ---------------|
 
 profile_attribute_presence_chunks --> champions_profile_presence_chunks --> 
 champions_profile_projected_population_sizes_chunks --> unioned_potential_profile_population_sizes
-
-
-
-    -- how many chunks?
-    {% set temp_chunks = 10%}
-
-    {%for chunk in range(temp_chunks)%}
-        {{ default__create_table_as(True, relaion, sql) }}
-        {% if not loop.last%} union {%endif%}
-    {%endfor%}
-{% endmaterialization %}
 #}
 
-
-{% materialization temp_table, adapter='bigquery' %}
+{% materialization temp_table_chunks, adapter='bigquery' %}
 
   {%- set existing_relation = load_cached_relation(this) -%}
   {%- set target_relation = this.incorporate(type='table') %}
