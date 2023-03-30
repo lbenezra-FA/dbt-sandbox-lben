@@ -41,7 +41,7 @@ champions_profile_projected_population_sizes_chunks --> unioned_potential_profil
 ---------------------------------------------------------------
   -- build model
 
-{%for temp_chunk in range(0,10)%}  
+{%for temp_chunk in range(var('temp_chunk_start'),var('temp_chunk_end'))%}  
     {%- set new_suffix -%}__dbt_tmp__{{temp_chunk}}{%- endset -%}
     {%- set intermediate_relation -%}{{make_intermediate_relation(target_relation, suffix=new_suffix)}}{%- endset -%}
     
