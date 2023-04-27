@@ -1,23 +1,23 @@
-number,cats
-1, Ricky
-2, Lance
-3, Amaranth
-4, Raisin Bran (Bin)
-5, Cap'n Crunch (Debris)
-6, Big Dog
-7, Fluffy
-8, Tater
-9, Jethro
-10, Edith
-11, Estelle
-12, Snickerdoodle
-13, Spider
-14, Mayfly
-15, Termite
-16, Weevil
-17, Hornet
-18, Sprig
-19, Rocky
-2, Kiwi
-21, Fizzy
-22, X-Ray
+number,cats,parent_id
+1, Ricky,5
+2, Lance,9
+3, Amaranth,
+4, Raisin Bran (Bin),
+5, Cap'n Crunch (Debris),
+6, Big Dog,10
+7, Fluffy,1
+8, Tater,
+9, Jethro,
+10, Edith,
+11, Estelle,
+12, Snickerdoodle,
+13, Spider,
+14, Mayfly,
+15, Termite,
+16, Weevil,
+17, Hornet,
+18, Sprig,
+19, Rocky,
+2, Kiwi,
+21, Fizzy,
+22, X-Ray,
