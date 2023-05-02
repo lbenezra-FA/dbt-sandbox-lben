@@ -74,3 +74,13 @@ champions_profile_projected_population_sizes_chunks --> unioned_potential_profil
 
   {{ return({'relations': [target_relation]}) }}
 {% endmaterialization %}
+
+
+
+
+{% materialization single_temp_table, adapter='bigquery' %}
+
+{%- set target_relation = this.incorporate(type='table') %}
+{{ return({'relations': [target_relation]}) }}
+  
+{% endmaterialization %}
