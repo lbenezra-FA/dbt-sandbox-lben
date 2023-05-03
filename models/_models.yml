@@ -1,0 +1,10 @@
+version: 2
+
+models:
+  - name: test_file_1
+    description: description
+    columns:
+      - name: number
+        tests: 
+          - unique
+
