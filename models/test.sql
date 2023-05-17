@@ -4,4 +4,7 @@
         materialized='temp_table_chunks'
     )
 }}
-select * from {{ ref('test_file_1') }}
+select 
+    mod(number,{{var('chunks')}}) as _chunk,
+    * 
+from {{ ref('test_file_1') }}

@@ -6,7 +6,7 @@
 
     champions_score_household_attribute_presence_reduced ---> household_attribute_presence_chunks --|
                                                                                                     |--> 
-    champions_score_profile_mapping ------------------------> profile_mapping_chunks ---------------|
+    champions_score_profile_mapping ------------------------> profile_mapping_chunks ---------------|l
 
 profile_attribute_presence_chunks --> champions_profile_presence_chunks --> 
 champions_profile_projected_population_sizes_chunks --> unioned_potential_profile_population_sizes
@@ -41,18 +41,92 @@ champions_profile_projected_population_sizes_chunks --> unioned_potential_profil
 ---------------------------------------------------------------
   -- build model
 
-{%for temp_chunk in range(var('temp_chunk_start'),var('temp_chunk_end'))%}  
+{%for temp_chunk in range(var('chunks'))%}  
     {%- set new_suffix -%}__dbt_tmp__{{temp_chunk}}{%- endset -%}
     {%- set intermediate_relation -%}{{make_intermediate_relation(target_relation, suffix=new_suffix)}}{%- endset -%}
     
     {% set new_sql %}
-     {{sql}} where number = {{temp_chunk}}
+    with _sql as ({{sql}})
+    select * from _sql where _chunk = {{temp_chunk}}
     {%endset%}
 
     {% call statement('main') -%}
         {{ get_create_table_as_sql(True, intermediate_relation, new_sql) }}
     {%- endcall %}
 
+{% endfor %}
+
+---------------------------------------------------------------
+
+
+  {#{{ adapter.rename_relation(intermediate_relation, target_relation) }}#}
+
+  {% do create_indexes(target_relation) %}
+
+  {{ run_hooks(post_hooks, inside_transaction=True) }}
+
+  {% do persist_docs(target_relation, model) %}
+
+  -- `COMMIT` happens here
+  {{ adapter.commit() }}
+
+
+  {{ run_hooks(post_hooks, inside_transaction=False) }}
+
+  {{ return({'relations': [target_relation]}) }}
+{% endmaterialization %}
+
+-----------------------------------------------------------
+{% materialization join_temp_table_chunks_temporarily, adapter='bigquery' %}
+
+  {%- set existing_relation = load_cached_relation(this) -%}
+  {%- set target_relation = this.incorporate(type='table') %}
+  {%- set intermediate_relation =  make_intermediate_relation(target_relation) -%}
+  -- the intermediate_relation should not already exist in the database; get_relation
+  -- will return None in that case. Otherwise, we get a relation that we can drop
+  -- later, before we try to use this name for the current operation
+  {%- set preexisting_intermediate_relation = load_cached_relation(intermediate_relation) -%}
+  /*
+      See ../view/view.sql for more information about this relation.
+  */
+  {%- set unique_key = config.get('unique_key') -%}
+
+  -- grab current tables grants config for comparision later on
+  {% set grant_config = config.get('grants') %}
+
+  -- drop the temp relations if they exist already in the database
+  {{ drop_relation_if_exists(preexisting_intermediate_relation) }}
+
+  {{ run_hooks(pre_hooks, inside_transaction=False) }}
+
+  -- `BEGIN` happens here:
+  {{ run_hooks(pre_hooks, inside_transaction=True) }}
+
+
+---------------------------------------------------------------
+  -- build model
+{%- set first_model %}test{%endset-%}
+{%- set second_model%}test_two{%endset-%}
+
+{%for chunked_temp in range(var('chunks'))%}
+    {%-set first_model_name -%}{{first_model}}__dbt_tmp__{{chunked_temp}}{%-endset-%}
+    
+    {%for other_chunked_temp in range(var('chunks'))%}
+        {%-set second_model_name -%}{{second_model}}__dbt_tmp__{{other_chunked_temp}}{%-endset%}
+    
+        {%- set new_suffix -%}__dbt_tmp__{{chunked_temp}}_{{other_chunked_temp}}{%- endset -%}
+
+        {%- set intermediate_relation -%}{{make_intermediate_relation(target_relation, suffix=new_suffix)}}{%- endset -%}
+    
+        {%- set new_sql %}
+            {{permutations_joined(first_model_name, second_model_name)}}
+        {%endset-%}
+
+        {% call statement('main') -%}
+            {{ get_create_table_as_sql(True, intermediate_relation, new_sql) }}
+        {%- endcall %}
+
+    {% endfor %}
 {% endfor %}
 
 ---------------------------------------------------------------
